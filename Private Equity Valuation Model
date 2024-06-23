@@ -1,0 +1,58 @@
+[Using a Jupyter Notebook]
+
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+
+def simulate_financial_data(years=5):
+    np.random.seed(0)
+    data = {
+        'Year': np.arange(2023, 2023 + years),
+        'Revenue': np.random.uniform(100000, 500000, years).round(2),
+        'EBITDA': np.random.uniform(20000, 120000, years).round(2),
+        'Net Income': np.random.uniform(10000, 70000, years).round(2),
+        'Cash Flow': np.random.uniform(5000, 60000, years).round(2)
+    }
+    return pd.DataFrame(data)
+
+def discounted_cash_flow(cash_flows, discount_rate):
+    years = np.arange(1, len(cash_flows) + 1)
+    discounted_flows = cash_flows / (1 + discount_rate) ** years
+    return discounted_flows.sum()
+
+def calculate_wacc(debt_ratio=0.2, equity_ratio=0.8, cost_of_debt=0.05, cost_of_equity=0.12):
+    return (debt_ratio * cost_of_debt) + (equity_ratio * cost_of_equity)
+
+def market_comparables(ebitda, comparables):
+    average_pe = np.mean([comp['P/E'] for comp in comparables])
+    average_ev_ebitda = np.mean([comp['EV/EBITDA'] for comp in comparables])
+    pe_valuation = average_pe * financial_data['Net Income'].iloc[-1]
+    ev_ebitda_valuation = average_ev_ebitda * ebitda
+    return pe_valuation, ev_ebitda_valuation
+
+# Generate financial data
+financial_data = simulate_financial_data()
+
+def perform_valuation():
+    wacc = calculate_wacc()
+    dcf_value = discounted_cash_flow(financial_data['Cash Flow'], wacc)
+    
+    comparables = [{'P/E': 15, 'EV/EBITDA': 9}, {'P/E': 10, 'EV/EBITDA': 7}]
+    pe_valuation, ev_ebitda_valuation = market_comparables(financial_data['EBITDA'].iloc[-1], comparables)
+    
+    print("DCF Valuation: $", round(dcf_value, 2))
+    print("P/E Valuation: $", round(pe_valuation, 2))
+    print("EV/EBITDA Valuation: $", round(ev_ebitda_valuation, 2))
+    
+    # Sensitivity analysis
+    wacc_values = np.arange(0.05, 0.15, 0.01)
+    dcf_values = [discounted_cash_flow(financial_data['Cash Flow'], rate) for rate in wacc_values]
+    report = pd.DataFrame({
+        'WACC': wacc_values,
+        'DCF Value': dcf_values
+    })
+    print("\nSensitivity Analysis (DCF Value vs. WACC):")
+    print(report)
+
+# Run the valuation function
+perform_valuation()
