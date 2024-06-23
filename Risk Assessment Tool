@@ -1,0 +1,51 @@
+[Using Terminal]
+
+python3 -m venv envdata
+source envdata/bin/activate
+pip install pandas numpy matplotlib scipy
+python3
+
+#Data Input
+import pandas as pd
+portfolio = pd.read_csv('#COMMENTED OUT DUE TO PRIVACY REASONS, USE FILE PATH TO YOUR CSV')
+
+#Risk metrics calculation,
+#Using Value at Risk (VaR), you can implement different methods of VaR such as historical VaR, Parametric and Monte Carlo Simulation. We will use Monte Carlo
+
+import numpy as np
+
+def monte_carlo_var(returns, alpha=0.05, num_simulations=1000):
+    mean_return =np.mean(returns)
+    sigma_return = np.std(returns)
+    sim_returns = np.random.normal(mean_return, sigma_return, num_simulations)
+    sim_var = np.random.normal(mean_return, sigma_return, num_simulations)
+    return sim_var
+
+# Example usage:
+returns = np.random.normal(0.001, 0.02, 250) #Stimulated daily returns
+var_mc = monte_carlo_var(returns)
+print("Monte Carlo VaR:", var_mc)
+
+#Monte Carlo simulation
+import numpy as np
+
+def monte_carlo_simulation(initial_price, mu, sigma, days):
+    price_paths = [initial_price]
+    for _ in range(days):
+        price = price_paths[-1] * np.exp((mu - 0.5 * sigma**2) + sigma * np.random.normal())
+        price_paths.append(price)
+    return price_paths
+
+#Using matplotlib to plot the distributors and potential losses
+
+import matplotlib.pyplot as plt
+
+def plot_results(price_paths):
+    plt.figure(figsize=(10, 5))
+    plt.plot(price_paths)
+    plt.title('Monte Carlo Simulation of Asset Prices')
+    plt.xlabel('Days')
+    plt.ylabel('Price')
+    plt.show()
+
+
