@@ -1,0 +1,77 @@
+[Using terminal]
+#Requires an account with alpaca markets
+
+
+python3 -m venv envdata
+source envdata/bin/activate
+pip install pandas numpy matplotlib yfinance alpaca-trade-api
+python3
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import yfinance as yf
+from alpaca_trade_api.rest import REST, TimeFrame
+
+API_KEY = '#YOUR API KEY FROM ALPACA'
+API_SECRET = '#YOUR API SECRET FROM ALPACA'
+BASE_URL = 'https://paper-api.alpaca.markets'
+
+api = REST(API_KEY, API_SECRET, BASE_URL)
+
+#Strategy Implementation
+def moving_average_crossover(data, short_window, long_window):
+    signals = pd.DataFrame(index=data.index)
+    signals['signal'] = 0.0
+    
+    # Create short simple moving average over the short window
+    signals['short_mavg'] = data['Close'].rolling(window=short_window, min_periods=1, center=False).mean()
+    
+    # Create long simple moving average over the long window
+    signals['long_mavg'] = data['Close'].rolling(window=long_window, min_periods=1, center=False).mean()
+    
+    # Create signals
+    signals['signal'][short_window:] = np.where(signals['short_mavg'][short_window:] > signals['long_mavg'][short_window:], 1.0, 0.0)
+    
+    # Generate trading orders
+    signals['positions'] = signals['signal'].diff()
+    return signals
+
+#Data Collection and Backtesting
+def backtest_strategy(symbol, start_date, end_date, short_window, long_window):
+    # Fetch data
+    data = yf.download(symbol, start=start_date, end=end_date)
+    
+    # Apply strategy
+    signals = moving_average_crossover(data, short_window, long_window)
+    
+    # Plotting
+    plt.figure(figsize=(10, 5))
+    plt.plot(data['Close'], label='Closing Prices', alpha=0.5)
+    plt.plot(signals['short_mavg'], label='Short-term MA', alpha=0.5)
+    plt.plot(signals['long_mavg'], label='Long-term MA', alpha=0.5)
+    
+    # Plot Buy signals
+    plt.plot(signals.loc[signals.positions == 1.0].index, 
+             signals.short_mavg[signals.positions == 1.0],
+             '^', markersize=10, color='g', lw=0, label='Buy Signal')
+    
+    # Plot Sell signals
+    plt.plot(signals.loc[signals.positions == -1.0].index, 
+             signals.short_mavg[signals.positions == -1.0],
+             'v', markersize=10, color='r', lw=0, label='Sell Signal')
+    
+    plt.title(f'Backtest Result for {symbol}')
+    plt.legend()
+    plt.show()
+
+    return signals
+
+# Example of backtesting using apple
+symbol = 'AAPL'
+start_date = '2020-01-01'
+end_date = '2021-01-01'
+short_window = 40
+long_window = 100
+
+backtest_strategy(symbol, start_date, end_date, short_window, long_window)
